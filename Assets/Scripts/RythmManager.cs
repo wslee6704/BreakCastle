@@ -4,13 +4,14 @@ using UnityEngine;
 
 public class RhythmManager : MonoBehaviour
 {
+    public static RhythmManager Instance;
     public static event Action<float> OnBeat; // 비트가 발생할 때 실행될 이벤트
     public static event Action<string> OnPlayerBeat; // 플레이어 입력 이벤트 (입력 타입 전달)
 
-    [SerializeField] private float bpm = 60f; // BPM 설정 (예: 120 BPM)
+    [SerializeField] public float bpm = 60f; // BPM 설정 (예: 120 BPM)
     [SerializeField] private float inputOffset = 0.15f; // 허용되는 오차 (±0.15초)
-    [SerializeField] private float bestInputOffset = 0.07f; // 허용되는 오차 (±0.07초)
-    [SerializeField] private float duplInputOffset = 0.03f; // 중복입력허용되는 오차 (±0.07초)
+    [SerializeField] private float bestInputOffset = 0.05f; // 허용되는 오차 (±0.07초)
+    [SerializeField] private float duplInputOffset = 0.1f; // 중복입력허용되는 오차 (±0.07초)
 
     public float beatInterval; // 한 비트당 시간 (초)
     private float nextBeatTime; // 다음 비트 발생 시간
@@ -19,6 +20,9 @@ public class RhythmManager : MonoBehaviour
     private List<KeyCode> inputBuffer = new List<KeyCode>(); // 동시 입력을 저장할 버퍼
     private void Awake()
     {
+        if(Instance == null){
+            Instance = this;
+        }
         beatInterval = 60f / bpm; // BPM을 초 단위로 변환
         nextBeatTime = Time.time + beatInterval;
         judgeTime = Time.time + beatInterval + inputOffset;//다음 비트 + 인풋 오차 시간
@@ -39,6 +43,8 @@ public class RhythmManager : MonoBehaviour
         //게임 엔티티 이동체크(노트 시간 + inputOffset 값인 judge라는 변수사용)
         if(currentTime >= judgeTime)
         {
+            ProcessInputBuffer(currentTime);
+            inputRegistered = false; // 새 판정범위에서 입력 초기화
             if(Mathf.Abs(judgeTime - nextBeatTime)>inputOffset) 
             {
                 judgeTime = nextBeatTime + inputOffset;
@@ -46,8 +52,6 @@ public class RhythmManager : MonoBehaviour
             else{
                 judgeTime = nextBeatTime + inputOffset + beatInterval;
             } 
-            ProcessInputBuffer(currentTime);
-            inputRegistered = false; // 새 판정범위에서 입력 초기화
         }
         // 🎮 플레이어 입력 체크
         if (Input.anyKeyDown&&!inputRegistered)
@@ -77,7 +81,9 @@ public class RhythmManager : MonoBehaviour
         if(timeDifference <= inputOffset){
             inputRegistered = true;
             if(currentTime + duplInputOffset < judgeTime){
+                Debug.Log("판정 변경 기존 시간 : " +  judgeTime + "변경 시간 : "+ currentTime + duplInputOffset);
                 judgeTime = currentTime + duplInputOffset;
+                
             }
             StoreInput(currentTime);
         }

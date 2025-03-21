@@ -27,7 +27,7 @@ public class RotationTest : MonoBehaviour
         RhythmManager.OnBeat -= RotateNote; // 박자 이벤트 해제
     }
 
-    void RotateNote(){
+    void RotateNote(float num){
         transform.Rotate(Vector3.back * 45);
         audioSource.Play();
     }
